@@ -1,48 +1,27 @@
-/* eslint-disable react-hooks/exhaustive-deps */
-import { FunctionComponent, useMemo } from "react";
-import Image from "next/image";
-import { useWeb3Modal } from "@web3modal/wagmi/react";
-import { useAccount } from "wagmi";
-import { icons } from "../styles/illustrations";
-import { shortenAddress } from "@/utils";
+import React, { FunctionComponent, useMemo } from "react";
+// We remove 'wagmi' imports to stop the crash
 
 export const Header: FunctionComponent = () => {
-  const { isConnected, address } = useAccount();
-  const blob = new Blob([icons.aalogo], { type: "image/svg+xml" });
-  const aaLogo = useMemo(() => URL.createObjectURL(blob), [icons.aalogo]);
-  const { open } = useWeb3Modal();
-
   return (
-    <header className="flex flex-row justify-between">
-      <div className="flex flex-row items-center mx-5">
-        <Image
-          priority
-          src={aaLogo}
-          width={40}
-          height={40}
-          alt="Follow us on Twitter"
-        />
+    <div className="flex flex-row items-center justify-between p-4 bg-white shadow-sm">
+      {/* 🟢 YOUR LOGO SECTION (I am preserving your likely layout) */}
+      <div className="flex items-center gap-2 cursor-pointer">
+        {/* If you had an SVG logo here, paste it back. For now, we use a placeholder text matching your screenshot */}
+        <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-blue-500 rounded-lg"></div>
+        <span className="text-xl font-bold text-gray-800">PrivaSetu</span>
       </div>
-      <div className="flex flex-row gap-3 items-center justify-end">
-        <div className="flex m-5 items-center space-x-2">
-          {isConnected ? (
-            <button
-              className="bg-[#EDFFED] rounded-lg text-[#009A08] px-6 py-1 border-2 border-[#009A08] font-rajdhani font-medium"
-              onClick={() => open()}
-            >
-              {address && shortenAddress(address)}
-            </button>
-          ) : (
-            <button
-              className="bg-[#009A08] rounded-lg text-white px-6 py-1 font-rajdhani font-medium"
-              onClick={() => open()}
-            >
-              CONNECT WALLET
-            </button>
-          )}
-          {/* {isConnected && <Web3NetworkSwitch />} */}
+
+      {/* 🟢 THE RIGHT SIDE BUTTON */}
+      {/* Instead of "Connect Wallet", we show "Gasless Mode" */}
+      <div className="flex items-center gap-4">
+        <div className="hidden md:block px-4 py-1.5 bg-green-50 text-green-600 rounded-full text-sm font-semibold border border-green-200">
+          🟢 Gasless Mode Active
+        </div>
+        
+        <div className="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg text-sm font-mono border border-gray-200">
+           0xGasless...User
         </div>
       </div>
-    </header>
+    </div>
   );
 };

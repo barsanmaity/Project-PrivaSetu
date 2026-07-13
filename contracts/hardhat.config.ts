@@ -1,17 +1,18 @@
 import { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox";
-import "hardhat-dependency-compiler";
-require("dotenv").config({ path: "../.env.local" });
+import * as dotenv from "dotenv";
+
+// Load .env file from the parent directory
+dotenv.config({ path: "../.env.local" }); 
 
 const config: HardhatUserConfig = {
-  solidity: "0.8.19",
-  dependencyCompiler: {
-    paths: ["@anon-aadhaar/contracts"],
-  },
+  solidity: "0.8.20",
   networks: {
     sepolia: {
-      url: process.env.NEXT_PUBLIC_RPC_URL,
-      accounts: [process.env.PRIVATE_KEY || ""],
+      url: "https://1rpc.io/sepolia",
+      chainId: 11155111,
+      // Uses your PRIVATE_KEY from the .env file
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     },
   },
 };
