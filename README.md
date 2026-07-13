@@ -1,43 +1,65 @@
-# Anon Aadhaar Boilerplate
+# 🛡️ PrivaSetu Protocol
 
-This is an example app showing how to integrate the [Anon Aadhaar](https://github.com/anon-aadhaar/anon-aadhaar).
+> **The Privacy-First Zero-Knowledge Age Verification dApp**
+>
 
-You can check the documentation [here](https://documentation.anon-aadhaar.pse.dev/)
+PrivaSetu is a decentralized, client-side age verification protocol built on top of the official **Anon Aadhaar SDK**. It allows Indian citizens to cryptographically prove their age (>18) to platforms without ever revealing their name, date of birth, Aadhaar number, or biometric data.
 
-You can fork/clone it.
+## 🚀 The Vision
 
-To run it locally you'll need to add some env variables. You can copy the `.env.local.example` to a `.env.local` file.
+Traditional identity verification requires users to hand over highly sensitive government documents (like PDFs or physical cards) to centralized servers, creating massive honeypots for data breaches.
+
+PrivaSetu leverages **Zero-Knowledge Proofs (ZK-SNARKs)** to shift the verification process entirely to the user's local device. The server only receives a mathematically verified "True/False" receipt, ensuring 100% data privacy.
+
+---
+
+## 🏗️ Core Architecture & "The Flex"
+
+Integrating ZK cryptography into a modern web app presents significant hardware challenges. PrivaSetu was engineered with a **Dual-State Architecture** to handle these physical constraints gracefully.
+
+### 1. Production Cryptography (Real Mode)
+
+The protocol uses the `AnonAadhaarProvider` to execute a heavy client-side **Groth16 Prover** via WebAssembly (Wasm).
+
+* It intercepts the Indian Government's RSA-2048 digital signature from the Aadhaar secure QR code.
+* It generates a ZK-SNARK proof locally, proving the RSA signature is valid and the calculated age is >18.
+* **The Challenge:** Generating ZK circuits locally demands massive, contiguous RAM allocations (often 1GB+), which frequently triggers `WebAssembly.Memory.grow()` crashes on standard 8GB laptops.
+
+### 2. Smart Fallback UI (Demo Mode)
+
+To ensure a flawless user experience on hardware-constrained devices (or during live hackathon presentations), PrivaSetu implements a seamless `REAL_MODE` toggle.
+
+* When hardware limits are hit, the UI gracefully falls back to a deterministic simulation of the ZK-proving process.
+* It maintains the exact UI flow, cryptographic time-delays, and receipt generation, ensuring the UX remains uninterrupted while bypassing the Wasm memory crash.
+
+---
+
+## 🔐 Security: "Defense in Depth" Gatekeeper
+
+PrivaSetu does not blindly trust user input. It utilizes a **Double-Layered Security Gatekeeper** to protect the WebAssembly engine from malicious data or DoS attacks.
+
+* **Layer 1 (UI Intercept):** An asynchronous React `useEffect` instantly analyzes uploaded documents or camera scans. If the data is not a valid Secure BigInt (`/^\d+$/`) or recognized SDK JSON, it physically blocks the user from reaching the proving stage.
+* **Layer 2 (Pre-Computation Lock):** Right before the heavy Groth16 math is triggered, a secondary function verifies state integrity. If the DOM was manipulated, the execution halts, saving the device from processing poisoned circuits.
+* **Automatic Memory Purge:** Upon successful verification, all session keys and local data are permanently overwritten (`0x00000000`) and purged from RAM.
+
+---
+
+## 💻 Tech Stack
+
+* **Framework:** Next.js / React (TypeScript)
+* **Cryptography:** Anon Aadhaar SDK (Circom, SnarkJS, Groth16)
+* **Styling:** Tailwind CSS & Framer Motion (Animations)
+* **Hardware Interfacing:** `html5-qrcode` (Custom Headless Scanning)
+
+---
+
+## 🛠️ Getting Started (Local Development)
+
+If you have a machine with 16GB+ RAM and wish to run the real Wasm cryptographic circuits locally:
+
+**1. Clone the repository**
 
 ```bash
-# RPC URL
-NEXT_PUBLIC_RPC_URL=
-# Address of deployed Anon Aadhaar 
-NEXT_PUBLIC_ANON_AADHAAR_CONTRACT_ADDRESS=6bE8Cec7a06BA19c39ef328e8c8940cEfeF7E281
-# Address of the vote contract address with production key of UIDAI (for using with real Aadhaars)
-NEXT_PUBLIC_VOTE_CONTRACT_ADDRESS_PROD=221745DCe3a550fbe1a65A07d3882d9065EC4a83
-# Address of the vote contract address with test key (for using test QRs)
-NEXT_PUBLIC_VOTE_CONTRACT_ADDRESS_TEST=4a78D2C4CC758Ae9B441bA18448A902FFA523BD2
-# WalletConnect API key
-NEXT_PUBLIC_PROJECT_ID=
-# Your wallet private key, used only in deployin contracts
-PRIVATE_KEY=
-```
-
-### Install
-
-```bash
-yarn install
-```
-
-### Start
-
-```bash
-yarn dev
-```
-
-### Test
-
-```bash
-cd contracts
-npx hardhat test
+git clone [https://github.com/YOUR_USERNAME/Project-PrivaSetu.git](https://github.com/YOUR_USERNAME/Project-PrivaSetu.git)
+cd Project-PrivaSetu
 ```
