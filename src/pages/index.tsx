@@ -6,104 +6,98 @@ import SmartInput from "../components/SmartInput";
 import VerificationResult from "../components/VerificationResult"; // Import the Gatekeeper
 
 export default function Home() {
-  //state management 
-  const[anonAadhaar] = useAnonAadhaar();
-  //what user see..
-  const[viewState, setViewState] = useState<"SCAN" | "GATEKEEPER" | "MINTING" | "SUCCESS">("SCAN");
-  // If data exists -> Show Gatekeeper.
+  // State management 
+  const [anonAadhaar] = useAnonAadhaar();
+  
+  // What the user sees
+  const [viewState, setViewState] = useState<"SCAN" | "GATEKEEPER" | "MINTING" | "SUCCESS">("SCAN");
+  
+  // If data exists -> Show Gatekeeper
   const [scannedData, setScannedData] = useState<string | null>(null);
-  //other add+ gatekeeper....
-  const[txHash, setTxHash] = useState<string>("");
-  const[statusMsg, setStatusMsg] = useState<string>("");
+  
+  // Blockchain transaction states
+  const [txHash, setTxHash] = useState<string>("");
+  const [statusMsg, setStatusMsg] = useState<string>("");
 
-  //SCANNER HANDLER
+  // ==========================================
+  // SCANNER HANDLER
+  // ==========================================
   const handleQrFound = (qrData: string) => {
     console.log("QR Data sent to Gatekeeper:", qrData);
     setScannedData(qrData); // This triggers the screen switch
     setViewState("GATEKEEPER");
   };
 
-  //=============main blockchain integrate===================
-  //pass this function into verificationresult component..
-  const handleShredderComplete = async () =>{
-    console.log("💥 Shredder animation finished. Starting Blockchain Mint...");
-
-    //switch view to minting ...for this user see a loader
-    setViewState("MINTING");
-    setStatusMsg("⏳ Generatiing Zero-Knowledge Proof...");
-    //proof lost
-    if(anonAadhaar.status !== "logged-in") {
-        setStatusMsg("❌ Error: Proof lost. Please rescan.");
-        return;
-    }
-
-  //👇 UPDATED: Accepts the mock proof from the child component
+  // ==========================================
+  // BLOCKCHAIN INTEGRATION HANDLER
+  // ==========================================
   const handleAnimationComplete = async (mockProofFromChild?: any) => {
     console.log("💥 Shredder finished. Starting Blockchain Mint...");
     
     setViewState("MINTING"); 
     setStatusMsg("⏳ Verifying Zero-Knowledge Proof...");
-
-    // ======================================================
+  
     // 🛑 PATH 1: SIMULATION MODE (If Real SDK is empty)
-    // ======================================================
     if (anonAadhaar.status !== "logged-in") {
       console.warn("⚠️ No Real Login detected. Switching to SIMULATION MODE.");
       
       // Simulate a network delay
       setTimeout(() => {
-        // If we have a mock proof from the child, use its nullifier, else make one up
+        // Create a realistic-looking fake transaction hash
         const fakeHash = "0x" + Array(64).fill("0").map(() => Math.floor(Math.random() * 16).toString(16)).join("");
         
-        setTxHash(fakeHash); // Set a fake hash
+        setTxHash(fakeHash); // Set the fake hash
         setViewState("SUCCESS"); // Show the Success Screen! 🚀
       }, 3000);
       
-      return; // Stop here (Don't call the real blockchain)
+      return; // Stop execution here (Don't call the real blockchain)
     }
-    //main part
-    try{
-         const pcd = anonAadhaar.anonAadhaarProofs;
-         const impproofs = JSON.parse(pcd[0].pcd);
+    
+    // 🟢 PATH 2: REAL CRYPTOGRAPHY MODE
+    try {
+      const pcd = anonAadhaar.anonAadhaarProofs;
+      const impproofs = JSON.parse(pcd[0].pcd);
 
-         //setup for provider
-         setStatusMsg("🔗 Connecting to Blockchain...");
-         const provider = new ethers.JsonRpcProvider(process.env.NEXT_PUBLIC_RPC_URL);
-         const strangerWallet = ethers.Wallet.createRandom().connect(provider);
+      // Setup for provider
+      setStatusMsg("🔗 Connecting to Blockchain...");
+      const provider = new ethers.JsonRpcProvider(process.env.NEXT_PUBLIC_RPC_URL);
+      const strangerWallet = ethers.Wallet.createRandom().connect(provider);
 
-         //lets play
-         const payload = {
-          userAddress: strangerWallet.address,
-          nullifier: impproofs.proof.nullifier,
-          proof:impproofs.proof.proof
-         };
+      // Construct the payload for the smart contract
+      const payload = {
+        userAddress: strangerWallet.address,
+        nullifier: impproofs.proof.nullifier,
+        proof: impproofs.proof.proof
+      };
 
-         //call Backend(gasless...old vibe when js..🙂)
-         const response = await fetch("/api/relay", {
-          method: "POST",
-          headers: {"Content-Type": "application/json"},
-          body: JSON.stringify(payload),
-         });
-        //getting raw massage ...and turning into data
-         const data = await response.json();
+      // Call Backend (Gasless relay)
+      const response = await fetch("/api/relay", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      
+      const data = await response.json();
 
-         //final success...
-         if (data.success) {
-          setTxHash(data.txHash);
-          setViewState("SUCCESS"); //the final success screen
-         }else{
-          setStatusMsg(`❌ Blockchain Error: ${data.error}`);
-         }
+      // Handle the final result
+      if (data.success) {
+        setTxHash(data.txHash);
+        setViewState("SUCCESS"); // The final success screen
+      } else {
+        setStatusMsg(`❌ Blockchain Error: ${data.error}`);
+      }
     } catch(error: any) {
       console.log(error);
-      setStatusMsg("❌ Client Error: "+error.massage);
+      setStatusMsg("❌ Client Error: " + error.message);
     }
   };
-  //=========================================================
 
+  // ==========================================
+  // RESET HANDLER
+  // ==========================================
   const handleReset = () => {
-    setScannedData(null); // Go back to scanner
-    setViewState("SCAN");
+    setScannedData(null); // Clear the memory
+    setViewState("SCAN"); // Go back to scanner
     setTxHash("");
   };
 
@@ -122,19 +116,18 @@ export default function Home() {
       {/* MAIN CONTENT AREA */}
       <main className="w-full max-w-lg px-4 mb-20 flex flex-col items-center">
 
-        {/*view scanner---new line*/}
-        {viewState == "SCAN" &&(
+        {/* VIEW 1: SCANNER */}
+        {viewState === "SCAN" && (
           <SmartInput onQrFound={handleQrFound} />
         )}
         
-        {/*gatekeeper card----new line */}
-        {/* LOGIC: IF we have data, show Gatekeeper. ELSE show Scanner. */}
+        {/* VIEW 2: GATEKEEPER */}
         {viewState === "GATEKEEPER" && scannedData && (
-          <VerificationResult qrData={scannedData}
-           onReset={handleReset} 
-           //magic connection
-           onAnimationComplete={ handleAnimationComplete}
-           />
+          <VerificationResult 
+            qrData={scannedData}
+            onReset={handleReset} 
+            onAnimationComplete={handleAnimationComplete}
+          />
         )}
 
         {/* VIEW 3: BLOCKCHAIN LOADING */}
@@ -147,7 +140,7 @@ export default function Home() {
           </div>
         )}
 
-        {/* VIEW 4: SUCCESS */}
+        {/* VIEW 4: SUCCESS / NFT PASS */}
         {viewState === "SUCCESS" && (
           <div className="flex flex-col items-center animate-bounce-in">
             
@@ -156,7 +149,7 @@ export default function Home() {
               {/* Background Decoration */}
               <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500 opacity-10 rounded-full blur-3xl transform translate-x-10 -translate-y-10"></div>
               
-              {/* Header */}
+              {/* Card Header */}
               <div className="flex justify-between items-start mb-6">
                 <div>
                   <h3 className="text-xl font-bold tracking-wider">PrivaPass™</h3>
@@ -181,7 +174,7 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Footer */}
+              {/* Card Footer */}
               <div className="flex items-center gap-2 mt-4 pt-4 border-t border-slate-700/50">
                 <div className="w-6 h-6 rounded-full bg-gradient-to-r from-blue-400 to-purple-500"></div>
                 <p className="text-[10px] text-slate-400">Minted on Sepolia Network</p>
@@ -190,7 +183,7 @@ export default function Home() {
 
             {/* Success Text */}
             <h2 className="text-2xl font-bold text-gray-800 mb-2">Verification Complete</h2>
-            <p className="text-gray-500 mb-6 text-sm">
+            <p className="text-gray-500 mb-6 text-sm text-center">
               This Pass is now legally bound to your wallet. You can use it to access age-restricted services without showing your ID card ever again.
             </p>
 
@@ -201,7 +194,7 @@ export default function Home() {
               Verify Another User
             </button>
           </div>
-          )}
+        )}
 
       </main>
 
