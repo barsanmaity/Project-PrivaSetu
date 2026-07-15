@@ -37,7 +37,7 @@ export default function Home() {
     setViewState("MINTING"); 
     setStatusMsg("⏳ Verifying Zero-Knowledge Proof...");
   
-    // 🛑 PATH 1: SIMULATION MODE (If Real SDK is empty)
+  //   // 🛑 PATH 1: SIMULATION MODE (If Real SDK is empty)
     if (anonAadhaar.status !== "logged-in") {
       console.warn("⚠️ No Real Login detected. Switching to SIMULATION MODE.");
       
@@ -200,7 +200,7 @@ export default function Home() {
 
       {/* FOOTER */}
       <footer className="text-center text-gray-400 text-sm mb-6">
-        <p>Built for ETHIndia Hackathon 2026</p>
+        <p>Built for Age Verification Safely and Correctly</p>
         <p className="text-xs mt-1 text-gray-300">
           100% Client-Side • No Data Stored • No Tracking
         </p>

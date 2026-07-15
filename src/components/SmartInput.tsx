@@ -11,7 +11,7 @@ export default function SmartInput({ onQrFound }: { onQrFound: (data: string) =>
   // 🔴 MASTER SWITCH:
   // FALSE = Hackathon Demo (Old Camera UI, Simulated Proof)
   // TRUE = Real Product (Official SDK Popup, Real Proof)
-  const REAL_MODE = false;
+  const REAL_MODE = true;
   
   const [anonAdhaar] = useAnonAadhaar();
  const [mode, setMode] = useState<"select" | "camera" | "file" | "processing" | "error">("select");

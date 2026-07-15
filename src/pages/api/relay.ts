@@ -10,6 +10,7 @@ if (!privateKey) {
   throw new Error("❌ PRIVATE_KEY is missing in .env.local");
 }
 const wallet = new ethers.Wallet(privateKey, provider);
+console.log("the wallet address,", wallet.address);
 
 // 3. Setup the Contract
 // The address comes from your .env.local file
